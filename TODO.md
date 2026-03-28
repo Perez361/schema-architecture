@@ -1,1 +1,0 @@
-# Migration: master → main\n\n- [x] 1. Rename local branch master → main\n- [ ] 2. Push to remote main (resolve merge first)\n- [x] 3. Set upstream tracking\n- [x] 4. Set repo default branch to main\n- [ ] 5. Cleanup remote master (optional)\n- [ ] 6. Verify & complete
