@@ -22,8 +22,8 @@ const facts = [
 export default function Facts() {
   const ref = useFadeUp();
   return (
-    <section className="container-xxl py-5" style={{ paddingTop: "5rem" }}>
-      <div ref={ref} className="fade-up facts-grid" style={{ paddingTop: "3rem" }}>
+    <section className="container-xxl py-5">
+      <div ref={ref} className="fade-up facts-grid">
         {facts.map((f) => (
           <div key={f.title} className="fact-item">
             <div className="fact-icon">

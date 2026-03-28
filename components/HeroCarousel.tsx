@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -32,136 +32,75 @@ const slides = [
 
 export default function HeroCarousel() {
   const [current, setCurrent] = useState(0);
-  const [transitioning, setTransitioning] = useState(false);
+  const [animating, setAnimating] = useState(false);
+  const [contentKey, setContentKey] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const goTo = useCallback((index: number) => {
-    if (transitioning) return;
-    setTransitioning(true);
+    if (animating) return;
+    setAnimating(true);
     setTimeout(() => {
       setCurrent(index);
-      setTransitioning(false);
-    }, 300);
-  }, [transitioning]);
+      setContentKey((k) => k + 1);
+      setAnimating(false);
+    }, 350);
+  }, [animating]);
 
   useEffect(() => {
-    const id = setInterval(() => {
+    timerRef.current = setTimeout(() => {
       goTo((current + 1) % slides.length);
-    }, 6000);
-    return () => clearInterval(id);
+    }, 6500);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [current, goTo]);
 
   const slide = slides[current];
 
   return (
     <div className="hero-section">
-      <div className="hero-slide" style={{ height: "calc(100vh - 57px)", minHeight: 560 }}>
+      <div className="hero-slide">
+        {/* Background image */}
         <Image
+          key={current}
           src={slide.img}
           alt={slide.heading}
           fill
+          priority
           style={{
             objectFit: "cover",
-            transition: "opacity 0.6s ease",
-            opacity: transitioning ? 0 : 1,
+            objectPosition: "center",
+            opacity: animating ? 0 : 1,
+            transform: animating ? "scale(1.04)" : "scale(1)",
+            transition: "opacity 0.55s ease, transform 7s ease-out",
           }}
-          priority
         />
 
         {/* Gradient overlay */}
         <div className="hero-overlay">
-          <div className="container-xxl" style={{ width: "100%", padding: "0 2rem" }}>
+          <div
+            className="container-xxl"
+            style={{ width: "100%", padding: "0 2rem" }}
+          >
+            {/* Content — re-mount on slide change triggers CSS animations */}
             <div
-              className="hero-content"
-              style={{
-                maxWidth: 700,
-                opacity: transitioning ? 0 : 1,
-                transform: transitioning ? "translateY(16px)" : "translateY(0)",
-                transition: "opacity 0.5s ease, transform 0.5s ease",
-              }}
+              key={contentKey}
+              className="hero-content hero-content-animate"
             >
-              {/* Tag line */}
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  marginBottom: "1.5rem",
-                }}
-              >
-                <span
-                  style={{
-                    width: "40px",
-                    height: "1.5px",
-                    background: "#91c9df",
-                    display: "inline-block",
-                  }}
-                />
-                <span
-                  style={{
-                    color: "#91c9df",
-                    fontSize: "0.75rem",
-                    letterSpacing: "3px",
-                    textTransform: "uppercase",
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontWeight: 400,
-                  }}
-                >
-                  {slide.tag}
-                </span>
+              <div className="hero-tag">
+                <span className="hero-tag-line" />
+                <span className="hero-tag-text">{slide.tag}</span>
               </div>
 
-              <h1
-                style={{
-                  color: "#fff",
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: "clamp(2.4rem, 5.5vw, 4rem)",
-                  lineHeight: 1.1,
-                  fontWeight: 600,
-                  letterSpacing: "-0.5px",
-                  marginBottom: "1.25rem",
-                  textShadow: "0 2px 20px rgba(0,0,0,0.25)",
-                }}
-              >
-                {slide.heading}
-              </h1>
+              <h1 className="hero-h1">{slide.heading}</h1>
 
-              <p
-                style={{
-                  color: "rgba(255,255,255,0.8)",
-                  fontSize: "1rem",
-                  marginBottom: "2.25rem",
-                  fontWeight: 300,
-                  maxWidth: 520,
-                  lineHeight: 1.8,
-                }}
-              >
-                {slide.sub}
-              </p>
+              <p className="hero-sub">{slide.sub}</p>
 
-              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                <Link
-                  href={slide.href}
-                  className="btn btn-primary"
-                  style={{ padding: ".8rem 2.25rem" }}
-                >
+              <div className="hero-actions">
+                <Link href={slide.href} className="btn btn-primary" style={{ padding: ".8rem 2.25rem" }}>
                   {slide.cta}
                 </Link>
-                <Link
-                  href="/about"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    color: "rgba(255,255,255,0.8)",
-                    fontSize: "0.82rem",
-                    letterSpacing: "1px",
-                    textTransform: "uppercase",
-                    fontFamily: "'DM Sans', sans-serif",
-                    paddingBottom: "2px",
-                    borderBottom: "1px solid rgba(255,255,255,0.3)",
-                    transition: "color 0.3s, border-color 0.3s",
-                  }}
-                >
+                <Link href="/about" className="hero-link-secondary">
                   Learn More
                   <i className="fas fa-arrow-right" style={{ fontSize: "0.7rem" }} />
                 </Link>
@@ -171,23 +110,8 @@ export default function HeroCarousel() {
         </div>
 
         {/* Slide counter */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "2.5rem",
-            left: "2rem",
-            color: "rgba(255,255,255,0.5)",
-            fontSize: "0.78rem",
-            letterSpacing: "2px",
-            fontFamily: "'DM Sans', sans-serif",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <span style={{ color: "#91c9df", fontFamily: "'Cormorant Garamond', serif", fontSize: "1.1rem", fontWeight: 600 }}>
-            0{current + 1}
-          </span>
+        <div className="hero-counter">
+          <span className="hero-counter-current">0{current + 1}</span>
           <span>/</span>
           <span>0{slides.length}</span>
         </div>
@@ -207,23 +131,10 @@ export default function HeroCarousel() {
         </div>
 
         {/* Bottom progress bar */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: "2px",
-            background: "rgba(255,255,255,0.1)",
-          }}
-        >
+        <div className="hero-progress">
           <div
-            style={{
-              height: "100%",
-              background: "#91c9df",
-              width: `${((current + 1) / slides.length) * 100}%`,
-              transition: "width 0.5s ease",
-            }}
+            className="hero-progress-bar"
+            style={{ width: `${((current + 1) / slides.length) * 100}%` }}
           />
         </div>
       </div>
